@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leo | Character Artist</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* THE PALETTE - Deepened for Contrast */
+            --bg-color: #050505;
+            --card-bg: #0f0f0f;
+            --text-main: #e0e0e0;
+            --text-muted: #888888;
+            --accent: #D4AF37; /* Dull Gold */
+            --accent-glow: rgba(212, 175, 55, 0.3);
+            --grid-line: rgba(255, 255, 255, 0.08);
+            --error-red: #ff4444;
+            --container-width: 1400px;
+        }
+
+        /* 1. RESET & TEXTURE */
+        html { scroll-behavior: smooth; }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Space Mono', monospace;
+            overflow-x: hidden;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100px 100px; /* Subtle Grid Background */
+        }
+
+        /* THE NOISE FILTER */
+        .noise-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.04;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+            mix-blend-mode: overlay;
+        }
+
+        /* TYPOGRAPHY UPGRADES */
+        h1, h2, h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+
+        .meta-data {
+            font-size: 0.7rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            display: inline-block;
+            margin-bottom: 1rem;
+            border: 1px solid var(--accent);
+            padding: 0.4em 0.8em;
+            border-radius: 20px;
+            background: rgba(212, 175, 55, 0.05);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            display: block;
+            border-bottom: 1px solid var(--grid-line);
+            padding-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .container {
+            max-width: var(--container-width);
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* HERO SECTION */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid var(--grid-line);
+            padding-top: 6rem;
+            padding-bottom: 6rem;
+            transition: min-height 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .hero.has-active-char {
+            min-height: 70vh;
+        }
+
+        .hero h1 {
+            font-size: clamp(4rem, 10vw, 11rem);
+            max-width: 90%;
+            letter-spacing: -0.02em;
+            background: linear-gradient(180deg, #fff 0%, #666 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            max-width: 500px;
+            margin-top: 2rem;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 5rem;
+            border-left: 2px solid var(--accent);
+            padding-left: 1.5rem;
+        }
+
+        /* --- SQUADRON GRID (UPDATED) --- */
+        .squadron-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 2rem;
+        }
+
+        .char-card {
+            background: var(--card-bg);
+            border: 1px solid var(--grid-line);
+            aspect-ratio: 3/4;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            overflow: hidden;
+            border-radius: 2px; /* Tech look */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Active State */
+        .char-card.active-card {
+            border-color: var(--accent);
+            box-shadow: 0 0 30px var(--accent-glow);
+            background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
+        }
+
+        .char-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(255,255,255,0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+        }
+
+        /* Icons */
+        .char-card img {
+            width: 65%;
+            height: auto;
+            aspect-ratio: 1/1;
+            object-fit: contain;
+            border-radius: 50%;
+            margin-bottom: 3rem;
+            opacity: 0.6;
+            transition: all 0.5s ease;
+            filter: grayscale(100%) contrast(1.2);
+            border: 1px solid transparent;
+        }
+
+        .char-card:hover img, .char-card.active-card img {
+            opacity: 1;
+            filter: grayscale(0%);
+            transform: scale(1.1);
+            border: 1px solid var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .char-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .char-id {
+            color: var(--accent);
+            font-size: 0.7rem;
+            font-family: 'Space Mono', monospace;
+            display: block;
+            margin-bottom: 5px;
+            letter-spacing: 0.1em;
+        }
+
+        .char-name {
+            color: #fff;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            line-height: 1;
+            font-style: italic;
+        }
+
+        /* --- PROJECT SECTIONS (HUD UPGRADE) --- */
+        .project-section {
+            display: none;
+            padding: 10vh 0;
+            border-bottom: 1px solid var(--grid-line);
+            position: relative;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            /* Added padding to prevent footer overlap */
+            padding-bottom: 8rem; 
+        }
+
+        .project-section.active-unit {
+            display: block;
+            animation: fadeIn 0.8s forwards cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .project-header {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr; /* More space for title */
+            gap: 4rem;
+            margin-bottom: 5rem;
+            align-items: start;
+            border-left: 4px solid var(--accent);
+            padding-left: 2rem;
+            background: linear-gradient(90deg, rgba(212,175,55,0.05) 0%, transparent 100%);
+        }
+
+        .project-title {
+            font-size: clamp(3rem, 6vw, 7rem);
+            font-style: italic;
+            margin-top: 1rem;
+        }
+
+        /* THE DATA HUD */
+        .hud-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            background: rgba(255,255,255,0.03);
+            padding: 1.5rem;
+            border: 1px solid var(--grid-line);
+            border-radius: 4px;
+        }
+
+        .hud-row {
+            display: flex;
+            flex-direction: column;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 0.5rem;
+        }
+        
+        .hud-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+        .hud-value { font-size: 1rem; color: var(--accent); font-weight: 700; }
+
+        /* FLIP CARD & TECH GRID */
+        .flip-module { margin-bottom: 5rem; perspective: 2000px; }
+        .tech-grid {
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 30px; 
+            margin-bottom: 5rem;
+        }
+
+        .flip-card, .tech-item img {
+            border: 1px solid var(--grid-line);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-radius: 4px;
+        }
+
+        .flip-card {
+            position: relative; width: 100%; height: 80vh; cursor: pointer;
+            transform-style: preserve-3d; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .flip-card.is-flipped { transform: rotateY(180deg); }
+        .flip-face {
+            position: absolute; width: 100%; height: 100%;
+            -webkit-backface-visibility: hidden; backface-visibility: hidden;
+            border-radius: 4px; background: #0f0f0f; overflow: hidden;
+        }
+        .flip-back { transform: rotateY(180deg); background: #050505; }
+        .flip-face img { width: 100%; height: 100%; object-fit: contain; display: block; }
+        
+        /* FIX: Changed height from 100% to auto to prevent grid collapse */
+        .tech-item img {
+            width: 100%;
+            height: auto; 
+            object-fit: contain;
+            display: block;
+            filter: grayscale(30%) contrast(1.1);
+            transition: filter 0.3s ease, transform 0.3s ease;
+        }
+        
+        .tech-item:hover img { filter: grayscale(0%); transform: scale(1.02); }
+
+        /* THE TECHNICAL CAPTION STYLE */
+        .tech-desc {
+            margin-top: 1.2rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            padding-left: 1rem;
+            line-height: 1.6;
+            max-width: 95%;
+            font-family: 'Space Mono', monospace;
+            transition: border-color 0.3s ease, color 0.3s ease;
+        }
+
+        .tech-desc:hover {
+            border-color: var(--accent);
+            color: var(--text-main);
+        }
+
+        .flip-hint {
+            position: absolute; bottom: 30px; right: 30px;
+            background: rgba(0,0,0,0.8); color: var(--accent);
+            padding: 10px 20px; border: 1px solid var(--accent);
+            border-radius: 4px; font-size: 0.75rem; pointer-events: none;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            display: flex; align-items: center; gap: 10px; z-index: 10;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        /* --- VIEWER CONTAINER FIX (SOLVES OVERLAPPING) --- */
+        .viewer-container {
+            width: 100%; 
+            min-height: 600px; /* Replaces fixed height */
+            height: auto;
+            background: #000;
+            border: 1px solid var(--grid-line); 
+            display: flex;
+            flex-direction: column; /* Stack vertically */
+            align-items: center; 
+            justify-content: center;
+            position: relative; 
+            margin-top: 2rem;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.9);
+            z-index: 10; /* Ensure it sits on top if overlaps occur */
+        }
+        
+        .sketchfab-embed-wrapper { 
+            width: 100%; 
+            height: auto; 
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sketchfab-embed-wrapper iframe {
+            width: 100%;
+            height: 600px; /* Keeps iframe large */
+            border: none;
+        }
+        
+        /* Fix text spacing */
+        .sketchfab-embed-wrapper p {
+            margin: 15px 0;
+            text-align: center;
+            width: 100%;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        /* --- COMING SOON SPINNER (RESTORED) --- */
+        .viewer-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 600px; /* Ensure placeholder has height */
+            width: 100%;
+            color: var(--accent);
+            font-family: 'Space Mono', monospace;
+            letter-spacing: 0.2em;
+            text-shadow: 0 0 15px var(--accent-glow); /* Added Glow */
+            font-weight: bold;
+            z-index: 2;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--grid-line);
+            border-top: 2px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+            box-shadow: 0 0 15px var(--accent-glow); /* Added Glow */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* BACK BTN */
+        .back-to-top {
+            position: fixed; bottom: 40px; left: 40px;
+            background: rgba(0,0,0,0.8); border: 1px solid var(--accent);
+            color: var(--accent); padding: 12px 24px;
+            z-index: 100; cursor: pointer; text-decoration: none;
+            font-size: 0.8rem; opacity: 0; transition: opacity 0.3s;
+            pointer-events: none; backdrop-filter: blur(10px);
+            border-radius: 4px; text-transform: uppercase; letter-spacing: 0.1em;
+        }
+        .back-to-top.visible { opacity: 1; pointer-events: auto; }
+        .back-to-top:hover { background: var(--accent); color: #000; }
+
+        footer { padding: 8rem 0; text-align: center; border-top: 1px solid var(--grid-line); margin-top: 5rem; }
+        .contact-btn {
+            display: inline-block; font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem; color: var(--text-main); text-decoration: none;
+            border-bottom: 1px solid var(--accent); padding-bottom: 5px;
+            transition: all 0.3s ease;
+        }
+        .contact-btn:hover { color: var(--accent); text-shadow: 0 0 20px var(--accent-glow); }
+
+        /* IMAGE DEBUGGER */
+        img::after {
+            content: "⚠️ FILE NOT FOUND: " attr(src);
+            display: flex; align-items: center; justify-content: center;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #220000; color: var(--error-red); font-size: 0.8rem;
+            border: 1px solid var(--error-red); z-index: 2; padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .project-header { grid-template-columns: 1fr; border-left: none; padding-left: 0; }
+            .tech-grid { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 4rem; }
+            .flip-card { height: 50vh; }
+            .hud-panel { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="noise-overlay"></div>
+    <a href="#" onclick="closeAllUnits(); return false;" class="back-to-top" id="backBtn">← Return to Base</a>
+
+    <main class="container">
+        
+        <!-- HERO + SQUADRON SELECT -->
+        <section class="hero" id="roster">
+            <div class="meta-data">Leo // Character Artist // Portfolio '26</div>
+            <h1>SELECT<br>UNIT.</h1>
+            <p>High-fidelity character assets optimized for real-time engines. Select a unit below to initialize data decryption and asset inspection.</p>
+
+            <div class="squadron-grid">
+                
+                <!-- CARD 1: SAMURAI -->
+                <div class="char-card" id="card-samurai" onclick="toggleUnit('unit-samurai', 'card-samurai')">
+                    <img src="assets/icons/samurai.png" alt="Samurai Icon" onerror="this.style.display='block'">
+                    <div class="char-info">
+                        <span class="char-id">UNIT 01 //</span>
+                        <span class="char-name">The Samurai</span>
+                    </div>
+                </div>
+
+                <!-- CARD 2: NERD -->
+                <div class="char-card" id="card-nerd" onclick="toggleUnit('unit-nerd', 'card-nerd')">
+                    <img src="assets/icons/nerd.png" alt="Nerd Icon" onerror="this.style.display='block'">
+                    <div class="char-info">
+                        <span class="char-id">UNIT 02 //</span>
+                        <span class="char-name">The Technician</span>
+                    </div>
+                </div>
+
+                <!-- CARD 3: MONSTER -->
+                <div class="char-card" id="card-monster" onclick="toggleUnit('unit-monster', 'card-monster')">
+                    <img src="assets/icons/monster.png" alt="Monster Icon" onerror="this.style.display='block'">
+                    <div class="char-info">
+                        <span class="char-id">UNIT 03 //</span>
+                        <span class="char-name">Void Beast</span>
+                    </div>
+                </div>
+
+                <!-- CARD 4: MUSCLE -->
+                <div class="char-card" id="card-muscle" onclick="toggleUnit('unit-muscle', 'card-muscle')">
+                    <img src="assets/icons/muscle.png" alt="Muscle Icon" onerror="this.style.display='block'">
+                    <div class="char-info">
+                        <span class="char-id">UNIT 04 //</span>
+                        <span class="char-name">Heavy Brute</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- ============================================== -->
+        <!-- UNIT 01: SAMURAI                               -->
+        <!-- ============================================== -->
+        <article class="project-section" id="unit-samurai">
+            <header class="project-header">
+                <div>
+                    <div class="meta-data">Asset ID: SAM-01</div>
+                    <h2 class="project-title">The Samurai</h2>
+                </div>
+                <!-- HUD: Technical Specs Display -->
+                <div class="hud-panel">
+                    <div class="hud-row">
+                        <span class="hud-label">Tri Count</span>
+                        <span class="hud-value">45,200</span>
+                    </div>
+                    <div class="hud-row">
+                        <span class="hud-label">Textures</span>
+                        <span class="hud-value">2x 4K PBR</span>
+                    </div>
+                    <div class="hud-row">
+                        <span class="hud-label">Rigging</span>
+                        <span class="hud-value">Humanoid / FK</span>
+                    </div>
+                    <div class="hud-row">
+                        <span class="hud-label">Status</span>
+                        <span class="hud-value" style="color:#4caf50">COMPLETE</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- FLIP CARD -->
+            <div class="flip-module">
+                <span class="section-label">01 // TOPOLOGY INSPECTION</span>
+                <div class="flip-card" onclick="this.classList.toggle('is-flipped')">
+                    <div class="flip-face flip-front">
+                        <img src="assets/samurai/samurai_rendered.jpg" alt="Samurai Rendered" onerror="this.style.display='block'">
+                        <div class="flip-hint">⟳ Tap to Scan Wireframe</div>
+                    </div>
+                    <div class="flip-face flip-back">
+                        <img src="assets/samurai/samurai_wireframe.jpg" alt="Samurai Wireframe" onerror="this.style.display='block'">
+                        <div class="flip-hint" style="color: #fff; border-color: #fff;">⟳ Tap to see Render</div>
+                    </div>
+                </div>
+                <div class="tech-desc">
+                    >> NOTE: Quad-dominant topology optimized for deformation. Joint articulation points reinforced for clean rigging and animation support.
+                </div>
+            </div>
+
+            <!-- TECH GRID -->
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <span class="section-label">02 // SCULPT DETAIL</span>
+                    <img src="assets/samurai/samurai_clay.jpg" alt="Samurai Clay" onerror="this.style.display='block'">
+                    <div class="tech-desc">
+                        High-frequency details sculpted in ZBrush. Armor damage and organic cloth wear manually detailed to ensure unique narrative surfacing.
+                    </div>
+                </div>
+                <div class="tech-item">
+                    <span class="section-label">03 // ACTION CONTEXT</span>
+                    <img src="assets/samurai/samurai_action.jpg" alt="Samurai Action" onerror="this.style.display='block'">
+                    <div class="tech-desc">
+                        Real-time Unreal Engine 5 render. Lighting setup validates PBR material response and silhouette clarity.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- VIEWER (Active) -->
+            <div>
+                <span class="section-label">04 // INTERACTIVE PREVIEW</span>
+                <div class="viewer-container">
+                    <div class="sketchfab-embed-wrapper"> 
+                         <iframe title="Sample samurai" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share src="https://sketchfab.com/models/6afab7a5d33b4997a11b77a45f31906a/embed"> </iframe> <p> <a href="https://sketchfab.com/3d-models/sample-samurai-6afab7a5d33b4997a11b77a45f31906a?utm_medium=embed&utm_campaign=share-popup&utm_content=6afab7a5d33b4997a11b77a45f31906a" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;"> Sample samurai </a> by <a href="https://sketchfab.com/BSA14700?utm_medium=embed&utm_campaign=share-popup&utm_content=6afab7a5d33b4997a11b77a45f31906a" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;"> BSA@14700 </a> on <a href="https://sketchfab.com?utm_medium=embed&utm_campaign=share-popup&utm_content=6afab7a5d33b4997a11b77a45f31906a" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;">Sketchfab</a></p>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+
+        <!-- ============================================== -->
+        <!-- UNIT 02: NERD                                  -->
+        <!-- ============================================== -->
+        <article class="project-section" id="unit-nerd">
+            <header class="project-header">
+                <div>
+                    <div class="meta-data">Asset ID: TECH-02</div>
+                    <h2 class="project-title">The Technician</h2>
+                </div>
+                <div class="hud-panel">
+                    <div class="hud-row"><span class="hud-label">Tri Count</span><span class="hud-value">32,150</span></div>
+                    <div class="hud-row"><span class="hud-label">Textures</span><span class="hud-value">1x 4K PBR</span></div>
+                    <div class="hud-row"><span class="hud-label">Rigging</span><span class="hud-value">Mixamo / Custom</span></div>
+                    <div class="hud-row"><span class="hud-label">Status</span><span class="hud-value" style="color:#4caf50">COMPLETE</span></div>
+                </div>
+            </header>
+
+            <div class="flip-module">
+                <span class="section-label">01 // TOPOLOGY INSPECTION</span>
+                <div class="flip-card" onclick="this.classList.toggle('is-flipped')">
+                    <div class="flip-face flip-front">
+                        <img src="assets/nerd/nerd_rendered.jpg" alt="Nerd Rendered" onerror="this.style.display='block'">
+                        <div class="flip-hint">⟳ Tap to Scan Wireframe</div>
+                    </div>
+                    <div class="flip-face flip-back">
+                        <img src="assets/nerd/nerd_wireframe.jpg" alt="Nerd Wireframe" onerror="this.style.display='block'">
+                    </div>
+                </div>
+                <div class="tech-desc">
+                    >> NOTE: Facial topology specifically designed for ARKit blendshapes. Polycount budget prioritized for head and upper torso expressiveness.
+                </div>
+            </div>
+
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <span class="section-label">02 // SCULPT DETAIL</span>
+                    <img src="assets/nerd/nerd_clay.jpg" alt="Nerd Clay" onerror="this.style.display='block'">
+                    <div class="tech-desc">
+                        Hard-surface kitbashing integrated with organic cloth simulation. Focus on fabric tension and realistic folding logic.
+                    </div>
+                </div>
+                <div class="tech-item">
+                    <span class="section-label">03 // ACTION CONTEXT</span>
+                    <img src="assets/nerd/nerd_action.jpg" alt="Nerd Action" onerror="this.style.display='block'">
+                    <div class="tech-desc">
+                        In-engine character audit. Verifying albedo values against environmental lighting standards for consistency.
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEWER (Placeholder) -->
+            <div>
+                <span class="section-label">04 // INTERACTIVE PREVIEW</span>
+                <div class="viewer-container">
+                    <div class="viewer-placeholder">
+                        <div class="spinner"></div>
+                        <span>COMING SOON...</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+
+        <!-- ============================================== -->
+        <!-- UNIT 03: MONSTER                               -->
+        <!-- ============================================== -->
+        <article class="project-section" id="unit-monster">
+            <header class="project-header">
+                <div>
+                    <div class="meta-data">Asset ID: BEAST-03</div>
+                    <h2 class="project-title">Void Beast</h2>
+                </div>
+                <div class="hud-panel">
+                    <div class="hud-row"><span class="hud-label">Tri Count</span><span class="hud-value">68,900</span></div>
+                    <div class="hud-row"><span class="hud-label">Textures</span><span class="hud-value">3x 4K UDIMs</span></div>
+                    <div class="hud-row"><span class="hud-label">Rigging</span><span class="hud-value">Quadruped</span></div>
+                    <div class="hud-row"><span class="hud-label">Status</span><span class="hud-value" style="color:#4caf50">COMPLETE</span></div>
+                </div>
+            </header>
+
+            <div class="flip-module">
+                <span class="section-label">01 // TOPOLOGY INSPECTION</span>
+                <div class="flip-card" onclick="this.classList.toggle('is-flipped')">
+                    <div class="flip-face flip-front">
+                        <img src="assets/monster/monster_rendered.png" alt="Monster Rendered" onerror="this.style.display='block'">
+                        <div class="flip-hint">⟳ Tap to Scan Wireframe</div>
+                    </div>
+                    <div class="flip-face flip-back">
+                        <img src="assets/monster/monster_wireframe.png" alt="Monster Wireframe" onerror="this.style.display='block'">
+                    </div>
+                </div>
+                <div class="tech-desc">
+                    >> NOTE: Custom quadruped flow. Edge loops follow underlying muscle groups to support extreme stretching during combat animations.
+                </div>
+            </div>
+
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <span class="section-label">02 // SCULPT DETAIL</span>
+                    <img src="assets/monster/monster_clay.png" alt="Monster Clay" onerror="this.style.display='block'">
+                    <div class="tech-desc">
+                        Organic surfacing utilizing custom alpha brushes. Scale directionality and skin pores layered for surface realism.
+                    </div>
+                </div>
+                <div class="tech-item">
+                    <span class="section-label">03 // ACTION CONTEXT</span>
+                    <img src="assets/monster/monster_action.png" alt="Monster Action" onerror="this.style.display='block'">
+                    <div class="tech-desc">
+                        Dynamic pose validation. Checking rig stability and volume preservation in extreme motion ranges.
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEWER (Placeholder) -->
+            <div>
+                <span class="section-label">04 // INTERACTIVE PREVIEW</span>
+                <div class="viewer-container">
+                    <div class="viewer-placeholder">
+                        <div class="spinner"></div>
+                        <span>COMING SOON...</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+
+        <!-- ============================================== -->
+        <!-- UNIT 04: MUSCLE                                -->
+        <!-- ============================================== -->
+        <article class="project-section" id="unit-muscle">
+            <header class="project-header">
+                <div>
+                    <div class="meta-data">Asset ID: TANK-04</div>
+                    <h2 class="project-title">Heavy Brute</h2>
+                </div>
+                <div class="hud-panel">
+                    <div class="hud-row"><span class="hud-label">Tri Count</span><span class="hud-value">52,000</span></div>
+                    <div class="hud-row"><span class="hud-label">Textures</span><span class="hud-value">2x 4K PBR</span></div>
+                    <div class="hud-row"><span class="hud-label">Rigging</span><span class="hud-value">Standard / FK</span></div>
+                    <div class="hud-row"><span class="hud-label">Status</span><span class="hud-value" style="color:#4caf50">COMPLETE</span></div>
+                </div>
+            </header>
+
+            <div class="flip-module">
+                <span class="section-label">01 // TOPOLOGY INSPECTION</span>
+                <div class="flip-card" onclick="this.classList.toggle('is-flipped')">
+                    <div class="flip-face flip-front">
+                        <img src="assets/muscle/muscle_rendered.jpg" alt="Muscle Rendered" onerror="this.style.display='block'">
+                        <div class="flip-hint">⟳ Tap to Scan Wireframe</div>
+                    </div>
+                    <div class="flip-face flip-back">
+                        <img src="assets/muscle/muscle_wireframe.jpg" alt="Muscle Wireframe" onerror="this.style.display='block'">
+                    </div>
+                </div>
+                <div class="tech-desc">
+                    >> NOTE: High-density mesh optimized for muscle expansion. Topology supports corrective blendshapes for vascularity.
+                </div>
+            </div>
+
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <span class="section-label">02 // SCULPT DETAIL</span>
+                    <img src="assets/muscle/muscle_clay.jpg" alt="Muscle Clay" onerror="this.style.display='block'">
+                    <div class="tech-desc">
+                        Anatomical study focusing on muscle insertion points. Skin tension and subcutaneous fat distribution sculpted over bony landmarks.
+                    </div>
+                </div>
+                <div class="tech-item">
+                    <span class="section-label">03 // ACTION CONTEXT</span>
+                    <img src="assets/muscle/muscle_action.jpg" alt="Muscle Action" onerror="this.style.display='block'">
+                    <div class="tech-desc">
+                        Physicality assessment. Lighting scenario emphasizes volume, mass, and Subsurface Scattering (SSS) calibration.
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEWER (Placeholder) -->
+            <div>
+                <span class="section-label">04 // INTERACTIVE PREVIEW</span>
+                <div class="viewer-container">
+                    <div class="viewer-placeholder">
+                        <div class="spinner"></div>
+                        <span>COMING SOON...</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <footer>
+            <div class="meta-data">Status: Online</div>
+            <br><br>
+            <a href="mailto:leo@example.com" class="contact-btn">Leo@CharacterArt.com</a>
+            <br><br>
+            <p style="color: #666; font-size: 0.8rem; margin-top: 2rem;">
+                ASSET PIPELINE: ZBRUSH / MAYA / SUBSTANCE PAINTER / UNREAL ENGINE 5
+            </p>
+        </footer>
+
+    </main>
+
+    <script>
+        function toggleUnit(unitId, cardId) {
+            // 1. Hide all units
+            const allUnits = document.querySelectorAll('.project-section');
+            allUnits.forEach(unit => unit.classList.remove('active-unit'));
+
+            // 2. Reset cards
+            const allCards = document.querySelectorAll('.char-card');
+            allCards.forEach(card => card.classList.remove('active-card'));
+
+            // 3. Activate selected
+            const targetUnit = document.getElementById(unitId);
+            const targetCard = document.getElementById(cardId);
+            
+            if(targetUnit) {
+                targetUnit.classList.add('active-unit');
+                targetCard.classList.add('active-card');
+                
+                // Show back button
+                document.getElementById('backBtn').classList.add('visible');
+
+                // Shrink hero
+                document.getElementById('roster').classList.add('has-active-char');
+
+                // Smooth scroll
+                setTimeout(() => {
+                    targetUnit.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
+
+        function closeAllUnits() {
+            // Hide all units
+            const allUnits = document.querySelectorAll('.project-section');
+            allUnits.forEach(unit => unit.classList.remove('active-unit'));
+            
+            // Deactivate cards
+            const allCards = document.querySelectorAll('.char-card');
+            allCards.forEach(card => card.classList.remove('active-card'));
+            
+            // Hide back button
+            document.getElementById('backBtn').classList.remove('visible');
+            
+            // Reset Hero size
+            document.getElementById('roster').classList.remove('has-active-char');
+
+            // Scroll back
+            document.getElementById('roster').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+
+</body>
+</html>

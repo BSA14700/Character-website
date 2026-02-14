@@ -5,34 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leo | Character Artist</title>
     
+    <!-- Fonts: Cormorant for "Old World" elegance, Space Mono for "Tech/Wireframe" data -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
     <style>
         :root {
+            /* THE PALETTE: "Mocha Mousse" & "Void Black" - Nature Distilled */
             --bg-color: #0a0a0a;
             --text-main: #e0e0e0;
             --text-muted: #888888;
-            --accent: #D4AF37;
+            --accent: #D4AF37; /* Dull Gold */
             --grid-line: rgba(255, 255, 255, 0.1);
             --error-red: #ff4444;
             --container-width: 1400px;
         }
 
+        /* 1. RESET & TEXTURE */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: 'Space Mono', monospace;
+            font-family: 'Space Mono', monospace; /* Default to tech font */
             overflow-x: hidden;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
         }
 
-        /* --- DEBUGGER FOR MISSING IMAGES --- */
-        /* This makes broken images look like helpful error messages */
+        /* --- GITHUB DEBUGGER FOR MISSING IMAGES --- */
         img {
             display: block;
             background-color: #1a1a1a;
@@ -41,9 +43,9 @@
             overflow: hidden;
         }
         
-        /* When image is broken/missing, this text appears */
+        /* Helpful error message if path is wrong */
         img::after {
-            content: "⚠️ IMAGE NOT FOUND: " attr(src) " (Check filename)";
+            content: "⚠️ MISSING: " attr(src);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -51,13 +53,12 @@
             top: 0; left: 0; width: 100%; height: 100%;
             background: #220000;
             color: var(--error-red);
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             border: 1px solid var(--error-red);
             z-index: 2;
         }
 
-        /* --- END DEBUGGER --- */
-
+        /* THE NOISE FILTER */
         .noise-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -100,6 +101,7 @@
             padding: 0 2rem;
         }
 
+        /* HERO SECTION */
         .hero {
             height: 90vh;
             display: flex;
@@ -122,6 +124,7 @@
             font-size: 1.1rem;
         }
 
+        /* PROJECT SECTION */
         .project-section {
             padding: 10vh 0;
             border-bottom: 1px solid var(--grid-line);
@@ -147,13 +150,15 @@
             font-size: 0.9rem;
         }
 
-        /* SLIDER & IMAGES */
-        .comparison-module { margin-bottom: 4rem; }
+        /* SLIDER MODULE */
+        .comparison-module {
+            margin-bottom: 4rem;
+        }
 
         .comparison-slider {
             position: relative;
             width: 100%;
-            height: 80vh;
+            height: 80vh; 
             overflow: hidden;
             cursor: col-resize;
             border-radius: 4px;
@@ -163,7 +168,7 @@
         .comparison-slider img {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Ensures wireframe aligns with render */
+            object-fit: contain; /* Perfect alignment for X-Ray effect */
             object-position: center;
             position: absolute;
             top: 0; left: 0;
@@ -175,6 +180,7 @@
             top: 0; left: 0; bottom: 0;
             overflow: hidden;
             border-right: 2px solid var(--accent);
+            transition: width 0.1s ease-out;
             z-index: 10;
             background: #0a0a0a;
         }
@@ -194,9 +200,10 @@
             font-size: 1.2rem;
             transform: translateY(-50%);
             box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
-            pointer-events: none; /* Let clicks pass through to slider */
+            pointer-events: none;
         }
 
+        /* GRID MODULE */
         .tech-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -213,8 +220,11 @@
             display: block;
         }
 
-        .tech-item:hover img { filter: grayscale(0%); }
+        .tech-item:hover img {
+            filter: grayscale(0%);
+        }
 
+        /* VIEWER MODULE */
         .viewer-container {
             width: 100%;
             height: 600px;
@@ -227,10 +237,10 @@
             margin-top: 2rem;
         }
         
-        .sketchfab-embed-wrapper, .sketchfab-embed-wrapper iframe {
-            width: 100%; height: 100%;
-        }
+        .sketchfab-embed-wrapper { width: 100%; height: 100%; }
+        .sketchfab-embed-wrapper iframe { width: 100%; height: 100%; }
 
+        /* FOOTER */
         footer { padding: 5rem 0; text-align: center; }
 
         .contact-btn {
@@ -267,6 +277,9 @@
             <p>I am Leo. I specialize in game-ready character topology, high-fidelity sculpting, and texture narratives. Quality over quantity.</p>
         </section>
 
+        <!-- ============================================== -->
+        <!-- PROJECT 1: THE RONIN SENTRY                    -->
+        <!-- ============================================== -->
         <article class="project-section">
             <header class="project-header">
                 <div>
@@ -280,43 +293,40 @@
                 </div>
             </header>
 
-            <!-- SLIDER MODULE -->
+            <!-- MODULE 1: TOPOLOGY SLIDER -->
             <div class="comparison-module">
                 <span class="section-label">01 // TOPOLOGY INSPECTION (SLIDE TO REVEAL)</span>
-                
-                <!-- 
-                     The "src" here must match your file names EXACTLY.
-                     If you see a red box, the name is wrong or the file is missing.
-                -->
                 <div class="comparison-slider" id="slider-1">
-                    <!-- Bottom Layer (Wireframe) -->
-                    <img src="wireframe.png" alt="Wireframe Topology" onerror="this.style.display='block'"> 
+                    <!-- Bottom Layer: Wireframe (in portfolio folder) -->
+                    <img src="portfolio/wireframe.png" alt="Wireframe Topology" onerror="this.style.display='block'"> 
                     
-                    <!-- Top Layer (Textured) -->
+                    <!-- Top Layer: Textured (in portfolio folder) -->
                     <div class="img-overlay">
-                        <img src="textured.png" alt="Textured Studio Render" onerror="this.style.display='block'"> 
+                        <img src="portfolio/textured.png" alt="Textured Studio Render" onerror="this.style.display='block'"> 
                         <div class="handle">↔</div>
                     </div>
                 </div>
             </div>
 
-            <!-- GRID MODULE -->
+            <!-- MODULE 2 & 3: SCULPT & CONTEXT -->
             <div class="tech-grid">
                 <div class="tech-item">
                     <span class="section-label">02 // ZBRUSH HIGH-POLY SCULPT</span>
-                    <img src="clay model.png" alt="ZBrush Clay Render" onerror="this.style.display='block'">
+                    <!-- Clay Model (in portfolio folder) -->
+                    <img src="portfolio/clay model.png" alt="ZBrush Clay Render" onerror="this.style.display='block'">
                 </div>
                 <div class="tech-item">
                     <span class="section-label">03 // CINEMATIC CONTEXT</span>
-                    <img src="hero image.png" alt="Cinematic In-Game Context" onerror="this.style.display='block'">
+                    <!-- Hero Image (in portfolio folder) -->
+                    <img src="portfolio/hero image.png" alt="Cinematic In-Game Context" onerror="this.style.display='block'">
                 </div>
             </div>
 
-            <!-- VIEWER MODULE -->
+            <!-- MODULE 4: INTERACTIVE VIEWER -->
             <div>
                 <span class="section-label">04 // REAL-TIME ASSET VIEWER</span>
                 <div class="viewer-container">
-                    <!-- Placeholder Perfume Link - REPLACE WITH YOUR CHARACTER LINK -->
+                    <!-- Placeholder: Swap this iframe with your character iframe later -->
                     <div class="sketchfab-embed-wrapper"> 
                         <iframe title="Glass-study" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share src="https://sketchfab.com/models/fb03cbc4a4b44f2d950f07201849e2b0/embed"> </iframe> 
                     </div>
